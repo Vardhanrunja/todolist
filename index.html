@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Todo + Expense App</title>
+</head>
+<body>
+
+  <!-- ===================== -->
+  <!-- 📝 TODO LIST -->
+  <!-- ===================== -->
+  <h2>My Todo List</h2>
+
+  <input type="text" id="todo-input" placeholder="Enter a task">
+  <input type="date" id="todo-date">
+  <input type="time" id="todo-time">
+
+  <button id="add-btn">Add Task</button>
+
+  <ul id="todo-list"></ul>
+
+  <hr>
+
+  <!-- ===================== -->
+  <!-- 💰 EXPENSE TRACKER -->
+  <!-- ===================== -->
+  <h2>Expense Tracker</h2>
+
+  <input type="text" id="expense-name" placeholder="Expense name">
+  <input type="number" id="expense-amount" placeholder="Amount">
+  <input type="date" id="expense-date">
+
+  <br><br>
+
+  <textarea id="expense-comment" placeholder="Add comment (optional)"></textarea>
+
+  <br><br>
+
+  <button id="add-expense-btn">Add Expense</button>
+  <button id="calculate-btn">Calculate Total</button>
+
+  <ul id="expense-list"></ul>
+
+  <h3>Total: ₹ <span id="total-amount">0</span></h3>
+
+  <script src="todolist.js"></script>
+</body>
+</html>
