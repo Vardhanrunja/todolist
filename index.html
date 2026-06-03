@@ -1,3 +1,4 @@
+· HTML
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+ 
     :root {
       --bg: #0e0f11;
       --surface: #16181c;
@@ -27,7 +28,7 @@
       --radius: 12px;
       --radius-sm: 8px;
     }
-
+ 
     body {
       font-family: 'DM Sans', sans-serif;
       background: var(--bg);
@@ -35,9 +36,9 @@
       min-height: 100vh;
       font-size: 14px;
     }
-
+ 
     h1, h2, h3, h4 { font-family: 'Syne', sans-serif; }
-
+ 
     /* ─── App Shell ─── */
     .app-header {
       padding: 20px 28px 16px;
@@ -51,20 +52,7 @@
     .app-header h1 { font-size: 18px; font-weight: 700; color: var(--accent); letter-spacing: -0.3px; }
     .app-header .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
     @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.3; } }
-
-    /* DB badge */
-    .db-badge {
-      margin-left: auto;
-      font-size: 11px;
-      color: var(--muted);
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      padding: 3px 10px;
-      border-radius: 20px;
-      display: flex; align-items: center; gap: 5px;
-    }
-    .db-badge .dot-idb { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
-
+ 
     .nav-tabs {
       display: flex;
       gap: 4px;
@@ -86,20 +74,20 @@
     }
     .nav-tab.active { background: var(--surface3); color: var(--text); }
     .nav-tab:hover:not(.active) { color: var(--text); background: var(--surface2); }
-
+ 
     .main-layout {
       display: grid;
-      grid-template-columns: 1fr 300px;
+      grid-template-columns: 1fr 320px;
       gap: 0;
       min-height: calc(100vh - 112px);
     }
     .main-panel { padding: 24px 28px; border-right: 1px solid var(--border); }
-    .side-panel { padding: 20px 18px; background: var(--surface); overflow-y: auto; }
-
+    .side-panel { padding: 20px 20px; background: var(--surface); overflow-y: auto; }
+ 
     /* ─── Tab Views ─── */
     .tab-view { display: none; }
     .tab-view.active { display: block; }
-
+ 
     /* ─── Section Heading ─── */
     .section-title {
       font-size: 13px;
@@ -109,26 +97,7 @@
       letter-spacing: 1px;
       margin-bottom: 14px;
     }
-
-    /* ─── Month label above expense list ─── */
-    .expense-list-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 14px;
-    }
-    .expense-list-header .section-title { margin-bottom: 0; }
-    .expense-month-tag {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--accent2);
-      background: rgba(56,189,248,.1);
-      border: 1px solid rgba(56,189,248,.2);
-      padding: 3px 10px;
-      border-radius: 20px;
-      font-family: 'Syne', sans-serif;
-    }
-
+ 
     /* ─── Input Group ─── */
     .input-row {
       display: flex;
@@ -138,7 +107,7 @@
     }
     .input-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 140px; }
     .input-group label { font-size: 11px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .6px; }
-
+ 
     input[type="text"], input[type="number"], input[type="date"], input[type="time"], textarea {
       width: 100%;
       background: var(--surface2);
@@ -155,7 +124,7 @@
     input[type="date"]::-webkit-calendar-picker-indicator,
     input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.5); cursor: pointer; }
     textarea { resize: vertical; min-height: 70px; }
-
+ 
     /* ─── Buttons ─── */
     .btn {
       padding: 9px 18px;
@@ -183,7 +152,7 @@
     }
     .btn-danger { background: rgba(248,113,113,.1); color: var(--danger); border: 1px solid rgba(248,113,113,.2); }
     .btn-danger:hover { background: rgba(248,113,113,.2); }
-
+ 
     /* ─── Todo Items ─── */
     .todo-item {
       background: var(--surface);
@@ -223,7 +192,7 @@
     }
     .todo-expand-icon { color: var(--muted); font-size: 12px; transition: transform .2s; }
     .todo-item.expanded .todo-expand-icon { transform: rotate(180deg); }
-
+ 
     .todo-details {
       display: none;
       padding: 0 16px 14px 46px;
@@ -231,7 +200,7 @@
       margin-top: -1px;
     }
     .todo-item.expanded .todo-details { display: block; padding-top: 12px; }
-
+ 
     .detail-row {
       display: flex;
       gap: 20px;
@@ -246,7 +215,7 @@
       color: var(--muted);
     }
     .detail-chip span { color: var(--text); }
-
+ 
     /* ─── Expense Folder System ─── */
     .expense-folder {
       background: var(--surface);
@@ -257,7 +226,7 @@
       transition: border .15s;
     }
     .expense-folder:hover { border-color: var(--border2); }
-
+ 
     .folder-header {
       display: flex;
       align-items: center;
@@ -266,6 +235,8 @@
       cursor: pointer;
     }
     .folder-icon { font-size: 18px; flex-shrink: 0; }
+    .folder-icon.open { color: var(--warn); }
+    .folder-icon.closed { color: var(--muted2); }
     .folder-name { flex: 1; font-weight: 600; font-size: 14px; font-family: 'Syne', sans-serif; }
     .folder-count {
       font-size: 11px;
@@ -282,10 +253,10 @@
     }
     .folder-chevron { color: var(--muted); font-size: 12px; transition: transform .2s; }
     .expense-folder.open .folder-chevron { transform: rotate(180deg); }
-
+ 
     .folder-body { display: none; }
     .expense-folder.open .folder-body { display: block; }
-
+ 
     .expense-entry {
       display: flex;
       align-items: center;
@@ -298,10 +269,10 @@
     .entry-date { font-size: 11px; color: var(--muted); }
     .entry-comment { font-size: 12px; color: var(--muted); margin-top: 2px; font-style: italic; }
     .entry-amount { font-weight: 600; font-size: 14px; color: var(--text); font-family: 'Syne', sans-serif; }
-
-    /* ─── Side Panel ─── */
+ 
+    /* ─── Side Panel: Monthly Stats ─── */
     .side-panel h3 { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 16px; }
-
+ 
     .month-selector {
       display: flex;
       align-items: center;
@@ -319,7 +290,7 @@
       font-size: 13px;
       outline: none;
     }
-
+ 
     .stat-card {
       background: var(--surface2);
       border-radius: var(--radius-sm);
@@ -330,38 +301,40 @@
     .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 6px; }
     .stat-value { font-size: 22px; font-weight: 700; font-family: 'Syne', sans-serif; }
     .stat-value.green { color: var(--accent); }
-    .stat-value.blue  { color: var(--accent2); }
-    .stat-value.pink  { color: var(--accent3); }
-
-    /* ─── Side merchant rows — flat, no expand ─── */
-    .side-merchant-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 10px;
-      border-radius: var(--radius-sm);
+    .stat-value.blue { color: var(--accent2); }
+    .stat-value.pink { color: var(--accent3); }
+ 
+    .month-folder {
+      margin-bottom: 8px;
       background: var(--surface2);
       border: 1px solid var(--border);
-      margin-bottom: 6px;
-      gap: 8px;
-    }
-    .side-merchant-name {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text);
-      white-space: nowrap;
+      border-radius: var(--radius-sm);
       overflow: hidden;
-      text-overflow: ellipsis;
-      flex: 1;
     }
-    .side-merchant-amt {
+    .mfolder-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+    }
+    .mfolder-name { flex: 1; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mfolder-total { font-size: 13px; font-weight: 700; color: var(--accent); font-family: 'Syne', sans-serif; }
+    .mfolder-chevron { color: var(--muted); font-size: 11px; transition: transform .18s; flex-shrink: 0; }
+    .month-folder.open .mfolder-chevron { transform: rotate(180deg); }
+    .mfolder-body { display: none; border-top: 1px solid var(--border); }
+    .month-folder.open .mfolder-body { display: block; }
+    .mfolder-entry {
+      display: flex;
+      justify-content: space-between;
+      padding: 7px 12px;
       font-size: 12px;
-      font-weight: 700;
-      color: var(--accent);
-      font-family: 'Syne', sans-serif;
-      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
     }
-
+    .mfolder-entry:last-child { border-bottom: none; }
+    .mfolder-entry-date { color: var(--muted); }
+    .mfolder-entry-amt { font-weight: 500; color: var(--text); }
+ 
     /* ─── Empty State ─── */
     .empty-state {
       text-align: center;
@@ -370,7 +343,7 @@
     }
     .empty-state .icon { font-size: 32px; margin-bottom: 10px; opacity: .4; }
     .empty-state p { font-size: 13px; }
-
+ 
     /* ─── Toast ─── */
     #toast {
       position: fixed;
@@ -388,7 +361,7 @@
       white-space: nowrap;
     }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
+ 
     /* ─── Responsive ─── */
     @media (max-width: 760px) {
       .main-layout { grid-template-columns: 1fr; }
@@ -396,28 +369,27 @@
       .main-panel { padding: 16px; }
       .input-row { flex-direction: column; }
     }
-
+ 
     .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
   </style>
 </head>
 <body>
-
+ 
 <div class="app-header">
   <div class="dot"></div>
   <h1>FinTrack</h1>
-  <div class="db-badge"><div class="dot-idb"></div> IndexedDB</div>
 </div>
-
+ 
 <div class="nav-tabs">
   <button class="nav-tab active" onclick="switchTab('todo')">📝 Todo</button>
   <button class="nav-tab" onclick="switchTab('expense')">💰 Expenses</button>
 </div>
-
+ 
 <div class="main-layout">
-
+ 
   <!-- ─── MAIN PANEL ─── -->
   <div class="main-panel">
-
+ 
     <!-- TODO TAB -->
     <div class="tab-view active" id="tab-todo">
       <p class="section-title">Add Task</p>
@@ -444,12 +416,12 @@
           <button class="btn btn-primary" onclick="addTodo()">＋ Add Task</button>
         </div>
       </div>
-
+ 
       <hr class="divider">
       <p class="section-title">Tasks</p>
       <div id="todo-list"></div>
     </div>
-
+ 
     <!-- EXPENSE TAB -->
     <div class="tab-view" id="tab-expense">
       <p class="section-title">Add Expense</p>
@@ -476,25 +448,22 @@
           <button class="btn btn-primary" onclick="addExpense()">＋ Add</button>
         </div>
       </div>
-
+ 
       <hr class="divider">
-      <div class="expense-list-header">
-        <p class="section-title">Expense Folders</p>
-        <span class="expense-month-tag" id="expense-month-label">—</span>
-      </div>
+      <p class="section-title">Expense Folders</p>
       <div id="expense-list"></div>
     </div>
-
+ 
   </div>
-
+ 
   <!-- ─── SIDE PANEL ─── -->
   <div class="side-panel">
     <h3>📊 Monthly Summary</h3>
-
+ 
     <div class="month-selector">
       <select id="month-select" onchange="renderSidePanel()"></select>
     </div>
-
+ 
     <div id="side-todo" style="display:none;">
       <div class="stat-card">
         <div class="stat-label">Tasks This Month</div>
@@ -505,7 +474,7 @@
         <div class="stat-value green" id="side-todo-done">0</div>
       </div>
     </div>
-
+ 
     <div id="side-expense-stats" style="display:none;">
       <div class="stat-card">
         <div class="stat-label">Total Spent</div>
@@ -519,17 +488,17 @@
         <div class="stat-label">Unique Merchants</div>
         <div class="stat-value pink" id="side-merchants">0</div>
       </div>
-
+ 
       <hr class="divider" style="margin:14px 0">
       <p class="section-title" style="font-size:11px;">By Merchant</p>
       <div id="side-folder-list"></div>
     </div>
   </div>
-
+ 
 </div>
-
+ 
 <div id="toast"></div>
-
+ 
 <script src="todolist.js"></script>
 </body>
 </html>
