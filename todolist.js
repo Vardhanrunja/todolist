@@ -1,13 +1,61 @@
-
 /* ==========================================
-   FinTrack — Todo & Expense Tracker v2
+   FinTrack — Todo & Expense Tracker v3
+   IndexedDB persistence (survives cache clear)
    ========================================== */
- 
-let todos = JSON.parse(localStorage.getItem("todos")) || [];
-let expenses = JSON.parse(localStorage.getItem("expenses")) || [];
- 
+
+let todos = [];
+let expenses = [];
 let currentTab = "todo";
- 
+let dbReady = false;
+
+/* ─── IndexedDB Setup ─── */
+const DB_NAME = "fintrack_db";
+const DB_VERSION = 1;
+let db;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains("todos"))    d.createObjectStore("todos",    { keyPath: "id" });
+      if (!d.objectStoreNames.contains("expenses")) d.createObjectStore("expenses", { keyPath: "id" });
+    };
+    req.onsuccess = e => { db = e.target.result; resolve(db); };
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+function dbGetAll(store) {
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction(store, "readonly");
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+function dbPut(store, item) {
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction(store, "readwrite");
+    const req = tx.objectStore(store).put(item);
+    req.onsuccess = () => resolve();
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+function dbDelete(store, id) {
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction(store, "readwrite");
+    const req = tx.objectStore(store).delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+async function saveTodos()    { for (const t of todos)    await dbPut("todos", t); }
+async function saveExpenses() { for (const e of expenses) await dbPut("expenses", e); }
+
 /* ─── Tab Switch ─── */
 function switchTab(tab) {
   currentTab = tab;
@@ -19,7 +67,7 @@ function switchTab(tab) {
   document.getElementById("side-expense-stats").style.display = tab === "expense" ? "block" : "none";
   renderSidePanel();
 }
- 
+
 /* ─── Toast ─── */
 function showToast(msg) {
   const t = document.getElementById("toast");
@@ -27,56 +75,53 @@ function showToast(msg) {
   t.classList.add("show");
   setTimeout(() => t.classList.remove("show"), 2200);
 }
- 
+
 /* ========================================
    📝 TODO
    ======================================== */
-function addTodo() {
-  const text = document.getElementById("todo-input").value.trim();
-  const date = document.getElementById("todo-date").value;
-  const time = document.getElementById("todo-time").value;
+async function addTodo() {
+  const text  = document.getElementById("todo-input").value.trim();
+  const date  = document.getElementById("todo-date").value;
+  const time  = document.getElementById("todo-time").value;
   const notes = document.getElementById("todo-notes").value.trim();
- 
-  if (!text || !date || !time) {
-    showToast("⚠️ Fill task name, date and time");
-    return;
-  }
- 
-  todos.push({ id: Date.now(), text, date, time, notes, done: false });
-  saveTodos();
+
+  if (!text || !date || !time) { showToast("⚠️ Fill task name, date and time"); return; }
+
+  const item = { id: Date.now(), text, date, time, notes, done: false };
+  todos.push(item);
+  await dbPut("todos", item);
   renderTodos();
   showToast("✅ Task added");
- 
-  document.getElementById("todo-input").value = "";
-  document.getElementById("todo-date").value = "";
-  document.getElementById("todo-time").value = "";
-  document.getElementById("todo-notes").value = "";
- 
+
+  document.getElementById("todo-input").value  = "";
+  document.getElementById("todo-date").value   = "";
+  document.getElementById("todo-time").value   = "";
+  document.getElementById("todo-notes").value  = "";
   renderSidePanel();
 }
- 
+
 document.getElementById("todo-input").addEventListener("keydown", e => { if (e.key === "Enter") addTodo(); });
- 
-function toggleDone(id) {
+
+async function toggleDone(id) {
   todos = todos.map(t => t.id === id ? { ...t, done: !t.done } : t);
-  saveTodos();
+  const updated = todos.find(t => t.id === id);
+  await dbPut("todos", updated);
   renderTodos();
   renderSidePanel();
 }
- 
-function deleteTodo(id) {
+
+async function deleteTodo(id) {
   todos = todos.filter(t => t.id !== id);
-  saveTodos();
+  await dbDelete("todos", id);
   renderTodos();
   renderSidePanel();
   showToast("🗑️ Task removed");
 }
- 
+
 function toggleTodoExpand(id) {
-  const el = document.getElementById("todo-item-" + id);
-  el.classList.toggle("expanded");
+  document.getElementById("todo-item-" + id).classList.toggle("expanded");
 }
- 
+
 function formatDate(d) {
   if (!d) return "—";
   const [y, m, day] = d.split("-");
@@ -86,23 +131,19 @@ function formatDate(d) {
 function formatTime(t) {
   if (!t) return "";
   const [h, min] = t.split(":").map(Number);
-  const ampm = h >= 12 ? "PM" : "AM";
-  return `${h % 12 || 12}:${String(min).padStart(2,"0")} ${ampm}`;
+  return `${h % 12 || 12}:${String(min).padStart(2,"0")} ${h >= 12 ? "PM" : "AM"}`;
 }
- 
+
 function renderTodos() {
   const list = document.getElementById("todo-list");
   if (!todos.length) {
     list.innerHTML = `<div class="empty-state"><div class="icon">📋</div><p>No tasks yet. Add one above!</p></div>`;
     return;
   }
- 
-  // Sort: undone first, then by date
   const sorted = [...todos].sort((a, b) => {
     if (a.done !== b.done) return a.done ? 1 : -1;
     return new Date(a.date + "T" + a.time) - new Date(b.date + "T" + b.time);
   });
- 
   list.innerHTML = sorted.map(todo => {
     const overdue = !todo.done && new Date(todo.date + "T" + todo.time) < new Date();
     return `
@@ -129,54 +170,53 @@ function renderTodos() {
     </div>`;
   }).join("");
 }
- 
-function saveTodos() { localStorage.setItem("todos", JSON.stringify(todos)); }
- 
+
 /* ========================================
-   💰 EXPENSES — Folder System
+   💰 EXPENSES — current month only, folders
    ======================================== */
-function addExpense() {
-  const name = document.getElementById("expense-name").value.trim();
-  const amount = parseFloat(document.getElementById("expense-amount").value);
-  const date = document.getElementById("expense-date").value;
+function getCurrentMonthKey() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+}
+
+async function addExpense() {
+  const name    = document.getElementById("expense-name").value.trim();
+  const amount  = parseFloat(document.getElementById("expense-amount").value);
+  const date    = document.getElementById("expense-date").value;
   const comment = document.getElementById("expense-comment").value.trim();
- 
-  if (!name || !date || isNaN(amount) || amount <= 0) {
-    showToast("⚠️ Enter valid expense details");
-    return;
-  }
- 
-  expenses.push({ id: Date.now(), name, amount, date, comment });
-  saveExpenses();
+
+  if (!name || !date || isNaN(amount) || amount <= 0) { showToast("⚠️ Enter valid expense details"); return; }
+
+  const item = { id: Date.now(), name, amount, date, comment };
+  expenses.push(item);
+  await dbPut("expenses", item);
   renderExpenses();
   showToast("💸 Expense added");
- 
-  document.getElementById("expense-name").value = "";
-  document.getElementById("expense-amount").value = "";
-  document.getElementById("expense-date").value = "";
+
+  document.getElementById("expense-name").value    = "";
+  document.getElementById("expense-amount").value  = "";
+  document.getElementById("expense-date").value    = "";
   document.getElementById("expense-comment").value = "";
- 
   renderSidePanel();
 }
- 
+
 document.getElementById("expense-amount").addEventListener("keydown", e => { if (e.key === "Enter") addExpense(); });
- 
-function deleteExpense(id) {
+
+async function deleteExpense(id) {
   expenses = expenses.filter(e => e.id !== id);
-  saveExpenses();
+  await dbDelete("expenses", id);
   renderExpenses();
   renderSidePanel();
   showToast("🗑️ Expense removed");
 }
- 
+
 function toggleFolder(key) {
-  const el = document.getElementById("folder-" + key);
+  const el   = document.getElementById("folder-" + key);
   el.classList.toggle("open");
   const icon = el.querySelector(".folder-icon");
   icon.textContent = el.classList.contains("open") ? "📂" : "📁";
 }
- 
-/* Group expenses by merchant name */
+
 function groupExpenses(expList) {
   const groups = {};
   expList.forEach(exp => {
@@ -187,21 +227,37 @@ function groupExpenses(expList) {
   });
   return groups;
 }
- 
-function renderExpenses(expList) {
+
+/* Main expense list: shows ONLY the selected month's expenses */
+function renderExpenses() {
   const list = document.getElementById("expense-list");
-  const src = expList || expenses;
- 
-  if (!src.length) {
-    list.innerHTML = `<div class="empty-state"><div class="icon">💸</div><p>No expenses yet. Add one above!</p></div>`;
+
+  // Get the month currently selected in the side-panel dropdown
+  const selVal   = document.getElementById("month-select").value;
+  const [yr, mo] = selVal ? selVal.split("-").map(Number) : [new Date().getFullYear(), new Date().getMonth()+1];
+
+  const monthExp = expenses.filter(e => {
+    const d = new Date(e.date);
+    return d.getFullYear() === yr && d.getMonth()+1 === mo;
+  });
+
+  // Update the month label above the list
+  const labelEl = document.getElementById("expense-month-label");
+  if (labelEl) {
+    const d = new Date(yr, mo-1, 1);
+    labelEl.textContent = d.toLocaleString("default", { month: "long", year: "numeric" });
+  }
+
+  if (!monthExp.length) {
+    list.innerHTML = `<div class="empty-state"><div class="icon">💸</div><p>No expenses for this month.</p></div>`;
     return;
   }
- 
-  const groups = groupExpenses(src);
+
+  const groups     = groupExpenses(monthExp);
   const sortedKeys = Object.keys(groups).sort((a, b) => groups[b].total - groups[a].total);
- 
+
   list.innerHTML = sortedKeys.map(key => {
-    const g = groups[key];
+    const g       = groups[key];
     const safeKey = key.replace(/[^a-z0-9]/g, "_");
     const entries = [...g.entries].sort((a, b) => new Date(b.date) - new Date(a.date));
     return `
@@ -227,88 +283,91 @@ function renderExpenses(expList) {
     </div>`;
   }).join("");
 }
- 
-function saveExpenses() { localStorage.setItem("expenses", JSON.stringify(expenses)); }
- 
+
 /* ========================================
    📊 SIDE PANEL — Monthly Summary
    ======================================== */
 function buildMonthOptions() {
   const select = document.getElementById("month-select");
-  const now = new Date();
-  const options = [];
+  const now    = new Date();
+  const opts   = [];
   for (let i = 0; i < 12; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const d   = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const val = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
-    const label = d.toLocaleString("default", { month: "long", year: "numeric" });
-    options.push(`<option value="${val}">${label}</option>`);
+    const lbl = d.toLocaleString("default", { month: "long", year: "numeric" });
+    opts.push(`<option value="${val}">${lbl}</option>`);
   }
-  select.innerHTML = options.join("");
+  select.innerHTML = opts.join("");
 }
- 
+
 function renderSidePanel() {
   const [year, month] = document.getElementById("month-select").value.split("-").map(Number);
- 
+
   if (currentTab === "todo") {
-    document.getElementById("side-todo").style.display = "block";
+    document.getElementById("side-todo").style.display          = "block";
     document.getElementById("side-expense-stats").style.display = "none";
-    const monthTodos = todos.filter(t => {
-      const d = new Date(t.date);
-      return d.getFullYear() === year && d.getMonth()+1 === month;
-    });
-    document.getElementById("side-todo-count").textContent = monthTodos.length;
-    document.getElementById("side-todo-done").textContent = monthTodos.filter(t => t.done).length;
+    const mt = todos.filter(t => { const d = new Date(t.date); return d.getFullYear()===year && d.getMonth()+1===month; });
+    document.getElementById("side-todo-count").textContent = mt.length;
+    document.getElementById("side-todo-done").textContent  = mt.filter(t => t.done).length;
   } else {
-    document.getElementById("side-todo").style.display = "none";
+    document.getElementById("side-todo").style.display          = "none";
     document.getElementById("side-expense-stats").style.display = "block";
- 
-    const monthExpenses = expenses.filter(e => {
-      const d = new Date(e.date);
-      return d.getFullYear() === year && d.getMonth()+1 === month;
-    });
- 
-    const total = monthExpenses.reduce((s, e) => s + e.amount, 0);
-    document.getElementById("side-total").textContent = "₹" + total.toLocaleString("en-IN");
-    document.getElementById("side-count").textContent = monthExpenses.length;
-    const merchants = new Set(monthExpenses.map(e => e.name.toLowerCase().trim()));
+
+    const me    = expenses.filter(e => { const d = new Date(e.date); return d.getFullYear()===year && d.getMonth()+1===month; });
+    const total = me.reduce((s, e) => s + e.amount, 0);
+    document.getElementById("side-total").textContent     = "₹" + total.toLocaleString("en-IN");
+    document.getElementById("side-count").textContent     = me.length;
+    const merchants = new Set(me.map(e => e.name.toLowerCase().trim()));
     document.getElementById("side-merchants").textContent = merchants.size;
- 
-    // Side folder list (grouped by merchant for that month)
-    const groups = groupExpenses(monthExpenses);
+
+    /* Side panel: flat merchant list — name + total only, no expand */
+    const groups     = groupExpenses(me);
     const sortedKeys = Object.keys(groups).sort((a, b) => groups[b].total - groups[a].total);
     const folderList = document.getElementById("side-folder-list");
- 
+
     if (!sortedKeys.length) {
       folderList.innerHTML = `<p style="color:var(--muted);font-size:12px;text-align:center;padding:16px 0">No expenses this month</p>`;
-      return;
+    } else {
+      folderList.innerHTML = sortedKeys.map(key => {
+        const g = groups[key];
+        return `
+        <div class="side-merchant-row">
+          <span class="side-merchant-name">📁 ${g.displayName}</span>
+          <span class="side-merchant-amt">₹${g.total.toLocaleString('en-IN')}</span>
+        </div>`;
+      }).join("");
     }
- 
-    folderList.innerHTML = sortedKeys.map(key => {
-      const g = groups[key];
-      const safeKey = "side_" + key.replace(/[^a-z0-9]/g, "_");
-      const entries = [...g.entries].sort((a, b) => new Date(b.date) - new Date(a.date));
-      return `
-      <div class="month-folder" id="${safeKey}">
-        <div class="mfolder-header" onclick="document.getElementById('${safeKey}').classList.toggle('open')">
-          <span style="font-size:14px">📁</span>
-          <span class="mfolder-name">${g.displayName}</span>
-          <span class="mfolder-total">₹${g.total.toLocaleString('en-IN')}</span>
-          <span class="mfolder-chevron">▼</span>
-        </div>
-        <div class="mfolder-body">
-          ${entries.map(e => `
-          <div class="mfolder-entry">
-            <span class="mfolder-entry-date">${formatDate(e.date)}</span>
-            <span class="mfolder-entry-amt">₹${e.amount.toLocaleString('en-IN')}</span>
-          </div>`).join("")}
-        </div>
-      </div>`;
-    }).join("");
+
+    // Also re-render main expense list when month changes
+    renderExpenses();
   }
 }
- 
+
 /* ─── Init ─── */
-buildMonthOptions();
-renderTodos();
-renderExpenses();
-renderSidePanel();
+async function init() {
+  await openDB();
+
+  // Migrate old localStorage data if present (one-time)
+  const oldTodos    = localStorage.getItem("todos");
+  const oldExpenses = localStorage.getItem("expenses");
+  if (oldTodos) {
+    const parsed = JSON.parse(oldTodos);
+    for (const t of parsed) await dbPut("todos", t);
+    localStorage.removeItem("todos");
+  }
+  if (oldExpenses) {
+    const parsed = JSON.parse(oldExpenses);
+    for (const e of parsed) await dbPut("expenses", e);
+    localStorage.removeItem("expenses");
+  }
+
+  todos    = await dbGetAll("todos");
+  expenses = await dbGetAll("expenses");
+
+  buildMonthOptions();
+  renderTodos();
+  renderExpenses();
+  renderSidePanel();
+}
+
+init();
